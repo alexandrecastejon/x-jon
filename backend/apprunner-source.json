@@ -11,7 +11,9 @@
         "POSTGRES_DB": "xjon",
         "POSTGRES_USER": "xjon",
         "POSTGRES_PASSWORD": "#100tabA11",
-        "CORS_ALLOWED_ORIGINS": "https://main.di9p4hmrarknh.amplifyapp.com"
+        "CORS_ALLOWED_ORIGINS": "https://main.di9p4hmrarknh.amplifyapp.com",
+        "AWS_STORAGE_BUCKET_NAME": "x-jon-media-prod",
+        "AWS_S3_REGION_NAME": "us-east-1"
       }
     },
     "ImageRepositoryType": "ECR"

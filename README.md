@@ -21,9 +21,7 @@ A API em produção é a URL **HTTPS** configurada na variável de ambiente **`V
 - **Explorar:** lista de todos os outros perfis + busca com debounce (`/explorar`).
 - **Testes de API:** `apps.users` e `apps.posts` (feed, edição, registo, busca, etc.).
 - **Desenvolvimento local:** SQLite, `config.settings.development`, CORS aberto, media em `backend/media/`.
-- **Produção:** PostgreSQL, `config.settings.production`, WhiteNoise para estáticos, Gunicorn; **CORS** restrito à origem do front (ex.: domínio Amplify).
-
-**Limitação conhecida:** avatares gravados em disco na API podem perder-se em redeploy se o compute for efémero; para persistência total usar bucket S3 + `django-storages` (fora do escopo mínimo do curso, se documentado).
+- **Produção:** PostgreSQL, `config.settings.production`, WhiteNoise para estáticos, Gunicorn; **CORS** restrito à origem do front (ex.: domínio Amplify). **Avatares:** com `AWS_STORAGE_BUCKET_NAME` definido, uploads vão para **S3** via `django-storages`; sem isso, ficam em disco local (adequado só se o servidor tiver volume persistente e rota `/media/` configurada).
 
 ---
 
@@ -87,6 +85,7 @@ python manage.py test apps.users apps.posts
 3. **CORS:** `CORS_ALLOWED_ORIGINS` deve incluir a origem do Amplify, por exemplo `https://main.di9p4hmrarknh.amplifyapp.com` (sem barra final).
 4. **ALLOWED_HOSTS:** host público da API (e do balanceador, se existir).
 5. **Comandos típicos no servidor (após deploy):** `pip install -r requirements/prod.txt`, `python manage.py migrate`, `python manage.py collectstatic --noinput`.
+6. **Avatares (S3):** ver secção [Avatares em produção (S3)](#avatares-em-produção-s3) — bucket, IAM e variáveis `AWS_*`.
 
 ```bash
 # Exemplo local de comando Gunicorn (ajusta host/porta ao teu process manager)
@@ -95,13 +94,61 @@ export DJANGO_SETTINGS_MODULE=config.settings.production
 gunicorn config.wsgi:application --bind 0.0.0.0:8000
 ```
 
+### Avatares em produção (S3)
+
+Com `DEBUG=False`, o Django **não** serve `/media/` por defeito e o disco do contentor/instância costuma ser **efémero**. A configuração suportada no projeto é **S3** quando defines `AWS_STORAGE_BUCKET_NAME` (ver [`production.py`](backend/config/settings/production.py) e [`requirements/prod.txt`](backend/requirements/prod.txt)).
+
+**Na AWS (manual):**
+
+1. **Bucket S3** (ex.: `x-jon-media-prod`), mesma região que o backend quando possível.
+2. **Política de bucket** para leitura pública dos objetos (avatares são URLs públicas sem query string). Ajusta o nome do bucket no ARN:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadGetObject",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::x-jon-media-prod/*"
+    }
+  ]
+}
+```
+
+Desativa **Block Public Access** só se aceitares objetos legíveis publicamente; alternativa mais restrita é bucket privado + URLs assinadas (exige alterar `AWS_QUERYSTRING_AUTH` e lógica de expiração).
+
+3. **IAM** — utilizador ou **role** da instância (EC2/App Runner/ECS) com política mínima de escrita/leitura na API (a app só precisa de carregar; leitura pública é via política de bucket acima):
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::x-jon-media-prod",
+        "arn:aws:s3:::x-jon-media-prod/*"
+      ]
+    }
+  ]
+}
+```
+
+4. **Variáveis de ambiente** — ver [`.env.example`](backend/.env.example): `AWS_STORAGE_BUCKET_NAME`, `AWS_S3_REGION_NAME`; com role IAM podes omitir `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`. Opcional: `AWS_S3_CUSTOM_DOMAIN` para CloudFront.
+
+A API devolve URLs absolutas: com S3, o path já vem como `https://...`; em desenvolvimento continua a usar o host local para `/media/...`.
+
 ---
 
 ## Variáveis de ambiente (referência)
 
 | Onde | Variáveis principais |
 |------|----------------------|
-| **Django produção** | `DJANGO_SETTINGS_MODULE=config.settings.production`, `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `POSTGRES_*`, `CORS_ALLOWED_ORIGINS` |
+| **Django produção** | `DJANGO_SETTINGS_MODULE=config.settings.production`, `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `POSTGRES_*`, `CORS_ALLOWED_ORIGINS`, opcionalmente `AWS_STORAGE_BUCKET_NAME`, `AWS_S3_REGION_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_CUSTOM_DOMAIN` |
 | **Amplify (build)** | `VITE_API_URL` = URL base da API (HTTPS, sem `/` final) |
 
 Ficheiros de exemplo: [`backend/.env.example`](backend/.env.example), [`frontend/.env.example`](frontend/.env.example). **Não commits** ficheiros `.env` com segredos.

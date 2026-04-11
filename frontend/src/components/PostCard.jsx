@@ -16,8 +16,7 @@ export default function PostCard({ post, currentUsername, onEdit, showAuthor = t
             src={author.profile.avatar}
             alt=""
             className="avatar"
-            width={40}
-            height={40}
+            style={{ width: 40, height: 40, objectFit: "cover", borderRadius: "50%" }}
           />
         ) : (
           <div className="avatar" aria-hidden />

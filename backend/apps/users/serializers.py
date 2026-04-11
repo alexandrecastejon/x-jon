@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
+from .media_urls import avatar_absolute_url
 from .models import Follow, Profile
 
 User = get_user_model()
@@ -19,8 +20,9 @@ class ProfileSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         request = self.context.get("request")
-        if ret.get("avatar") and request:
-            ret["avatar"] = request.build_absolute_uri(instance.avatar.url)
+        abs_url = avatar_absolute_url(request, instance)
+        if abs_url:
+            ret["avatar"] = abs_url
         return ret
 
 
@@ -32,8 +34,9 @@ class ProfilePublicSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         request = self.context.get("request")
-        if ret.get("avatar") and request:
-            ret["avatar"] = request.build_absolute_uri(instance.avatar.url)
+        abs_url = avatar_absolute_url(request, instance)
+        if abs_url:
+            ret["avatar"] = abs_url
         return ret
 
 
