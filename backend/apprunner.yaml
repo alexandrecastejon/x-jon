@@ -1,0 +1,16 @@
+version: 1.0
+runtime: docker
+
+build:
+  commands:
+    build: []   # build é feito via ECR (imagem pré-construída)
+
+run:
+  runtime-version: "3.11"
+  command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2
+  network:
+    port: 8000
+    env: APP_PORT
+  env:
+    - name: DJANGO_SETTINGS_MODULE
+      value: config.settings.production

@@ -1,0 +1,6 @@
+{
+  "EgressConfiguration": {
+    "EgressType": "VPC",
+    "VpcConnectorArn": "arn:aws:apprunner:us-east-1:851725564784:vpcconnector/x-jon-vpc-connector/1/0a282bba1cd94eee94a16008913c0476"
+  }
+}

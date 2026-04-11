@@ -25,6 +25,8 @@ ALLOWED_HOSTS = [
     for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
     if h.strip()
 ]
+# App Runner health-check usa IP interno do container
+ALLOWED_HOSTS += ["127.0.0.1", "localhost"]
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
