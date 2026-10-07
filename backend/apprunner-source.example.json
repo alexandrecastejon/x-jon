@@ -1,0 +1,26 @@
+{
+  "ImageRepository": {
+    "ImageIdentifier": "<ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/x-jon-backend:<TAG>",
+    "ImageConfiguration": {
+      "Port": "8000",
+      "RuntimeEnvironmentVariables": {
+        "DJANGO_SETTINGS_MODULE": "config.settings.production",
+        "DJANGO_ALLOWED_HOSTS": "<APP_RUNNER_HOST>",
+        "POSTGRES_HOST": "<RDS_HOST>",
+        "POSTGRES_DB": "xjon",
+        "POSTGRES_USER": "xjon",
+        "CORS_ALLOWED_ORIGINS": "<FRONTEND_ORIGIN>",
+        "AWS_STORAGE_BUCKET_NAME": "<BUCKET>",
+        "AWS_S3_REGION_NAME": "<REGION>"
+      },
+      "RuntimeEnvironmentSecrets": {
+        "DJANGO_SECRET_KEY": "<SECRETS_MANAGER_ARN>",
+        "POSTGRES_PASSWORD": "<SECRETS_MANAGER_ARN>"
+      }
+    },
+    "ImageRepositoryType": "ECR"
+  },
+  "AuthenticationConfiguration": {
+    "AccessRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/AppRunnerECRAccessRole"
+  }
+}

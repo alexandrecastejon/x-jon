@@ -19,3 +19,6 @@ frontend/dist/
 # IDE
 .idea/
 .vscode/
+
+# Config de deploy com valores reais (nunca commitar; use o .example)
+backend/apprunner-source.json
